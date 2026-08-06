@@ -1,17 +1,21 @@
-# SmartBondhu Admin Panel
+# SmartBondhu Admin (Flutter)
 
-Internal admin dashboard — opens directly to the dashboard with no login screen.
+Internal admin mobile/desktop app — **no login screen**. Opens directly to the dashboard.
+
+## Features
+
+- Dashboard KPIs (revenue, bookings, users, vendors)
+- Revenue & booking charts (30 days)
+- Bookings list with status updates (sends push to customer)
+- Users list with activate/deactivate
 
 ## Setup
 
 ```bash
 cd admin_panel
-npm install
-cp .env.example .env
-npm run dev
+flutter pub get
+flutter run
 ```
-
-Open http://localhost:5173 — the dashboard loads immediately.
 
 ## Backend
 
@@ -23,24 +27,35 @@ source .venv/bin/activate
 PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Ensure `CORS_ORIGINS` in backend `.env` includes `http://localhost:5173`.
+## API URL
 
-## Features
+Default targets `localhost:8000`. For Android:
 
-- Dashboard with KPIs (users, bookings, revenue)
-- Revenue and booking charts (30-day)
-- Bookings list with status updates + push notifications
-- Users list with activate/deactivate
+| Device | Command |
+|--------|---------|
+| Emulator | `flutter run` (uses `10.0.2.2`) |
+| Physical device (Wi‑Fi) | `flutter run --dart-define=DEV_LAN_IP=192.168.1.83` |
+| USB + adb reverse | `adb reverse tcp:8000 tcp:8000` then `flutter run` |
 
-## Environment
-
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_BASE_URL` | Backend API base URL (default: `http://localhost:8000/api/v1`) |
-
-## Production build
+Override fully:
 
 ```bash
-npm run build
-npm run preview
+flutter run --dart-define=API_BASE_URL=http://192.168.1.83:8000/api/v1
 ```
+
+## Build
+
+```bash
+# Android APK
+flutter build apk
+
+# iOS
+flutter build ios
+
+# macOS
+flutter run -d macos
+```
+
+## Repo
+
+https://github.com/sayan9191/smart_bondhu_admin_pannel.git

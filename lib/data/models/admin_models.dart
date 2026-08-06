@@ -1,0 +1,170 @@
+class DashboardStats {
+  const DashboardStats({
+    required this.totalUsers,
+    required this.totalBookings,
+    required this.bookingsToday,
+    required this.newUsersToday,
+    required this.pendingBookings,
+    required this.completedBookings,
+    required this.totalRevenue,
+    required this.revenueToday,
+    required this.activeVendors,
+  });
+
+  final int totalUsers;
+  final int totalBookings;
+  final int bookingsToday;
+  final int newUsersToday;
+  final int pendingBookings;
+  final int completedBookings;
+  final double totalRevenue;
+  final double revenueToday;
+  final int activeVendors;
+
+  factory DashboardStats.fromJson(Map<String, dynamic> json) {
+    return DashboardStats(
+      totalUsers: json['total_users'] as int,
+      totalBookings: json['total_bookings'] as int,
+      bookingsToday: json['bookings_today'] as int,
+      newUsersToday: json['new_users_today'] as int,
+      pendingBookings: json['pending_bookings'] as int,
+      completedBookings: json['completed_bookings'] as int,
+      totalRevenue: double.parse(json['total_revenue'].toString()),
+      revenueToday: double.parse(json['revenue_today'].toString()),
+      activeVendors: json['active_vendors'] as int,
+    );
+  }
+}
+
+class RevenuePoint {
+  const RevenuePoint({
+    required this.date,
+    required this.revenue,
+    required this.bookings,
+  });
+
+  final DateTime date;
+  final double revenue;
+  final int bookings;
+
+  factory RevenuePoint.fromJson(Map<String, dynamic> json) {
+    return RevenuePoint(
+      date: DateTime.parse(json['date'] as String),
+      revenue: double.parse(json['revenue'].toString()),
+      bookings: json['bookings'] as int,
+    );
+  }
+}
+
+class Paginated<T> {
+  const Paginated({
+    required this.items,
+    required this.total,
+    required this.page,
+    required this.pageSize,
+    required this.totalPages,
+  });
+
+  final List<T> items;
+  final int total;
+  final int page;
+  final int pageSize;
+  final int totalPages;
+
+  factory Paginated.fromJson(
+    Map<String, dynamic> json,
+    T Function(Map<String, dynamic>) fromJsonT,
+  ) {
+    return Paginated(
+      items: (json['items'] as List<dynamic>)
+          .map((e) => fromJsonT(e as Map<String, dynamic>))
+          .toList(),
+      total: json['total'] as int,
+      page: json['page'] as int,
+      pageSize: json['page_size'] as int,
+      totalPages: json['total_pages'] as int,
+    );
+  }
+}
+
+class AdminUser {
+  const AdminUser({
+    required this.id,
+    required this.email,
+    required this.phone,
+    required this.fullName,
+    required this.role,
+    required this.isActive,
+    required this.isVerified,
+    required this.createdAt,
+    required this.bookingsCount,
+  });
+
+  final String id;
+  final String? email;
+  final String? phone;
+  final String? fullName;
+  final String role;
+  final bool isActive;
+  final bool isVerified;
+  final DateTime createdAt;
+  final int bookingsCount;
+
+  factory AdminUser.fromJson(Map<String, dynamic> json) {
+    return AdminUser(
+      id: json['id'] as String,
+      email: json['email'] as String?,
+      phone: json['phone'] as String?,
+      fullName: json['full_name'] as String?,
+      role: json['role'] as String,
+      isActive: json['is_active'] as bool,
+      isVerified: json['is_verified'] as bool,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      bookingsCount: json['bookings_count'] as int,
+    );
+  }
+}
+
+class AdminBooking {
+  const AdminBooking({
+    required this.id,
+    required this.bookingNumber,
+    required this.customerName,
+    required this.customerEmail,
+    required this.customerPhone,
+    required this.serviceName,
+    required this.addressSummary,
+    required this.scheduledAt,
+    required this.status,
+    required this.totalAmount,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String bookingNumber;
+  final String? customerName;
+  final String? customerEmail;
+  final String? customerPhone;
+  final String serviceName;
+  final String? addressSummary;
+  final DateTime scheduledAt;
+  final String status;
+  final double totalAmount;
+  final DateTime createdAt;
+
+  factory AdminBooking.fromJson(Map<String, dynamic> json) {
+    return AdminBooking(
+      id: json['id'] as String,
+      bookingNumber: json['booking_number'] as String,
+      customerName: json['customer_name'] as String?,
+      customerEmail: json['customer_email'] as String?,
+      customerPhone: json['customer_phone'] as String?,
+      serviceName: json['service_name'] as String,
+      addressSummary: json['address_summary'] as String?,
+      scheduledAt: DateTime.parse(json['scheduled_at'] as String),
+      status: json['status'] as String,
+      totalAmount: double.parse(json['total_amount'].toString()),
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+}

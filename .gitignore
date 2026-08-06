@@ -1,18 +1,29 @@
-# Dependencies
-node_modules/
-dist/
-dist-ssr/
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
 
-# Environment
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
 .env
 .env.local
 
 # Logs
 *.log
 
-# Editor
-.vscode/
-.idea/
-
-# OS
-.DS_Store
+# Node (legacy)
+node_modules/
+dist/
