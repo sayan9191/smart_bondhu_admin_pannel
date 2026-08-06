@@ -1,6 +1,6 @@
 # SmartBondhu Admin Panel
 
-React admin dashboard for managing bookings, users, and revenue analytics.
+Internal admin dashboard — opens directly to the dashboard with no login screen.
 
 ## Setup
 
@@ -11,18 +11,11 @@ cp .env.example .env
 npm run dev
 ```
 
-Open http://localhost:5173
-
-## Login
-
-Use the seeded admin account:
-
-- **Email:** `admin@smartbandhu.com`
-- **Password:** `Admin@123`
+Open http://localhost:5173 — the dashboard loads immediately.
 
 ## Backend
 
-The admin panel connects to the SmartBondhu FastAPI backend. Start it first:
+Start the SmartBandhu API first:
 
 ```bash
 cd ../backend
@@ -44,3 +37,10 @@ Ensure `CORS_ORIGINS` in backend `.env` includes `http://localhost:5173`.
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_BASE_URL` | Backend API base URL (default: `http://localhost:8000/api/v1`) |
+
+## Production build
+
+```bash
+npm run build
+npm run preview
+```

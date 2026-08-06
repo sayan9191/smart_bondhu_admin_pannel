@@ -1,5 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { NavLink, Outlet } from 'react-router-dom';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
@@ -8,14 +7,6 @@ const navItems = [
 ];
 
 export function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -41,12 +32,9 @@ export function Layout() {
         </nav>
         <div className="sidebar-footer">
           <div className="admin-chip">
-            <span>{user?.full_name || user?.email}</span>
-            <small>Administrator</small>
+            <span>SmartBondhu Ops</span>
+            <small>Internal dashboard</small>
           </div>
-          <button type="button" className="btn ghost" onClick={handleLogout}>
-            Sign out
-          </button>
         </div>
       </aside>
       <main className="main-content">

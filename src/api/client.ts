@@ -7,42 +7,6 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('admin_access_token');
-      localStorage.removeItem('admin_user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  },
-);
-
-export interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    full_name: string;
-    role: string;
-  };
-  tokens: {
-    access_token: string;
-    refresh_token: string;
-    token_type: string;
-  };
-}
-
 export interface DashboardStats {
   total_users: number;
   total_bookings: number;
@@ -94,11 +58,6 @@ export interface AdminBooking {
   status: string;
   total_amount: string;
   created_at: string;
-}
-
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
-  return data;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
