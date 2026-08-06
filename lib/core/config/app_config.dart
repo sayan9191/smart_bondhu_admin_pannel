@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:smartbandhu_admin/core/config/api_host_resolver.dart';
 
 class AppConfig {
   AppConfig._();
@@ -29,20 +30,29 @@ class AppConfig {
       return;
     }
 
+    if (Platform.isIOS) {
+      _resolvedApiBaseUrl = 'http://localhost:8000/api/v1';
+      return;
+    }
+
     _resolvedApiBaseUrl = 'http://localhost:8000/api/v1';
   }
 
   static Future<String> _resolveAndroidApiBaseUrl() async {
     if (_devLanIp.isNotEmpty) {
-      return 'http://$_devLanIp:8000/api/v1';
+      final url = 'http://$_devLanIp:8000/api/v1';
+      if (kDebugMode) debugPrint('SmartBondhu API → $url');
+      return url;
     }
 
     final androidInfo = await DeviceInfoPlugin().androidInfo;
-    if (!androidInfo.isPhysicalDevice) {
-      return 'http://10.0.2.2:8000/api/v1';
-    }
+    final isEmulator = !androidInfo.isPhysicalDevice;
 
-    return 'http://127.0.0.1:8000/api/v1';
+    final candidates = isEmulator
+        ? ['10.0.2.2', '127.0.0.1']
+        : ['127.0.0.1', '10.0.2.2'];
+
+    return ApiHostResolver.resolve(hostCandidates: candidates);
   }
 
   static String get apiBaseUrl {

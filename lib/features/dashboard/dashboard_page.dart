@@ -5,6 +5,8 @@ import 'package:smartbandhu_admin/core/theme/app_theme.dart';
 import 'package:smartbandhu_admin/core/utils/formatters.dart';
 import 'package:smartbandhu_admin/data/admin_api.dart';
 import 'package:smartbandhu_admin/data/models/admin_models.dart';
+import 'package:smartbandhu_admin/core/app_error_mapper.dart';
+import 'package:smartbandhu_admin/widgets/maintenance_view.dart';
 import 'package:smartbandhu_admin/widgets/stat_card.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -25,7 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   Future<void> _load() async {
@@ -47,7 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = AppErrorMapper.message(e);
         _loading = false;
       });
     }
@@ -60,16 +62,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     if (_error != null || _stats == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error ?? 'Failed to load dashboard', textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _load, child: const Text('Retry')),
-          ],
-        ),
-      );
+      return MaintenanceView(message: _error, onRetry: _load);
     }
 
     final stats = _stats!;
@@ -140,8 +133,10 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
+          if (_revenue.isNotEmpty) ...[
           const SizedBox(height: 20),
-          _ChartCard(
+          RepaintBoundary(
+            child: _ChartCard(
             title: 'Revenue (30 days)',
             child: SizedBox(
               height: 220,
@@ -202,8 +197,10 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
           ),
+          ),
           const SizedBox(height: 16),
-          _ChartCard(
+          RepaintBoundary(
+            child: _ChartCard(
             title: 'Bookings (30 days)',
             child: SizedBox(
               height: 220,
@@ -262,6 +259,8 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
           ),
+          ),
+          ],
         ],
       ),
     );

@@ -16,15 +16,23 @@ class AdminShellPage extends StatefulWidget {
 
 class _AdminShellPageState extends State<AdminShellPage> {
   int _index = 0;
+  final _builtPages = <int, Widget>{};
+
+  Widget _pageForIndex(int index) {
+    return _builtPages.putIfAbsent(index, () {
+      switch (index) {
+        case 0:
+          return DashboardPage(key: const PageStorageKey('dashboard'), api: widget.api);
+        case 1:
+          return BookingsPage(key: const PageStorageKey('bookings'), api: widget.api);
+        default:
+          return UsersPage(key: const PageStorageKey('users'), api: widget.api);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      DashboardPage(api: widget.api),
-      BookingsPage(api: widget.api),
-      UsersPage(api: widget.api),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -55,7 +63,7 @@ class _AdminShellPageState extends State<AdminShellPage> {
           ],
         ),
       ),
-      body: IndexedStack(index: _index, children: pages),
+      body: _pageForIndex(_index),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (index) => setState(() => _index = index),

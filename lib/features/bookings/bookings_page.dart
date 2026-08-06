@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:smartbandhu_admin/core/app_error_mapper.dart';
 import 'package:smartbandhu_admin/core/theme/app_theme.dart';
 import 'package:smartbandhu_admin/core/utils/formatters.dart';
 import 'package:smartbandhu_admin/data/admin_api.dart';
 import 'package:smartbandhu_admin/data/models/admin_models.dart';
+import 'package:smartbandhu_admin/widgets/maintenance_view.dart';
 import 'package:smartbandhu_admin/widgets/status_badge.dart';
 
 const _statuses = [
@@ -36,7 +38,7 @@ class _BookingsPageState extends State<BookingsPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   Future<void> _load() async {
@@ -58,7 +60,7 @@ class _BookingsPageState extends State<BookingsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = AppErrorMapper.message(e);
         _loading = false;
       });
     }
@@ -72,7 +74,7 @@ class _BookingsPageState extends State<BookingsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Update failed: $e')),
+        SnackBar(content: Text(AppErrorMapper.message(e))),
       );
     } finally {
       if (mounted) setState(() => _updatingId = null);
@@ -135,10 +137,8 @@ class _BookingsPageState extends State<BookingsPage> {
           ),
         ),
         if (_error != null)
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(_error!, style: const TextStyle(color: AppColors.error)),
-          ),
+          Expanded(child: MaintenanceView(message: _error, onRetry: _load))
+        else
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
