@@ -151,4 +151,56 @@ class AdminApi {
     );
     return BroadcastResult.fromJson(response.data!);
   }
+
+  Future<List<AdminCatalogCategory>> getCatalog() async {
+    final response = await _client.dio.get<Map<String, dynamic>>('/admin/catalog');
+    final categories = response.data!['categories'] as List<dynamic>;
+    return categories
+        .map((e) => AdminCatalogCategory.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> createCategory({
+    required String name,
+    required String slug,
+    String? imageUrl,
+  }) async {
+    await _client.dio.post('/admin/catalog/categories', data: {
+      'name': name,
+      'slug': slug,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+    });
+  }
+
+  Future<void> createSubCategory({
+    required String categoryId,
+    required String name,
+    required String slug,
+  }) async {
+    await _client.dio.post('/admin/catalog/sub-categories', data: {
+      'category_id': categoryId,
+      'name': name,
+      'slug': slug,
+    });
+  }
+
+  Future<void> createService({
+    required String subCategoryId,
+    required String name,
+    required String slug,
+    required double basePrice,
+    required int durationMinutes,
+    String? description,
+    String? imageUrl,
+  }) async {
+    await _client.dio.post('/admin/catalog/services', data: {
+      'sub_category_id': subCategoryId,
+      'name': name,
+      'slug': slug,
+      'base_price': basePrice,
+      'duration_minutes': durationMinutes,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+    });
+  }
 }

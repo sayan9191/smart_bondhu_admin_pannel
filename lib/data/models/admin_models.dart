@@ -240,3 +240,86 @@ class BroadcastResult {
         recipients: json['recipients'] as int? ?? 0,
       );
 }
+
+class AdminCatalogService {
+  const AdminCatalogService({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.basePrice,
+    required this.durationMinutes,
+    required this.isActive,
+  });
+
+  final String id;
+  final String name;
+  final String slug;
+  final double basePrice;
+  final int durationMinutes;
+  final bool isActive;
+
+  factory AdminCatalogService.fromJson(Map<String, dynamic> json) => AdminCatalogService(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        slug: json['slug'] as String,
+        basePrice: double.parse(json['base_price'].toString()),
+        durationMinutes: json['duration_minutes'] as int,
+        isActive: json['is_active'] as bool? ?? true,
+      );
+}
+
+class AdminCatalogSubCategory {
+  const AdminCatalogSubCategory({
+    required this.id,
+    required this.categoryId,
+    required this.name,
+    required this.slug,
+    required this.services,
+  });
+
+  final String id;
+  final String categoryId;
+  final String name;
+  final String slug;
+  final List<AdminCatalogService> services;
+
+  factory AdminCatalogSubCategory.fromJson(Map<String, dynamic> json) => AdminCatalogSubCategory(
+        id: json['id'] as String,
+        categoryId: json['category_id'] as String,
+        name: json['name'] as String,
+        slug: json['slug'] as String,
+        services: (json['services'] as List<dynamic>? ?? [])
+            .map((e) => AdminCatalogService.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+class AdminCatalogCategory {
+  const AdminCatalogCategory({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.isActive,
+    required this.subCategories,
+  });
+
+  final String id;
+  final String name;
+  final String slug;
+  final bool isActive;
+  final List<AdminCatalogSubCategory> subCategories;
+
+  factory AdminCatalogCategory.fromJson(Map<String, dynamic> json) {
+    final category = json['category'] as Map<String, dynamic>;
+    final subs = (json['sub_categories'] as List<dynamic>? ?? [])
+        .map((e) => AdminCatalogSubCategory.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return AdminCatalogCategory(
+      id: category['id'] as String,
+      name: category['name'] as String,
+      slug: category['slug'] as String,
+      isActive: category['is_active'] as bool? ?? true,
+      subCategories: subs,
+    );
+  }
+}

@@ -1,61 +1,45 @@
 # SmartBondhu Admin (Flutter)
 
-Internal admin mobile/desktop app — **no login screen**. Opens directly to the dashboard.
-
-## Features
-
-- Dashboard KPIs (revenue, bookings, users, vendors)
-- Revenue & booking charts (30 days)
-- Bookings list with status updates (sends push to customer)
-- Users list with activate/deactivate
+Internal admin app — dashboard, catalog, bookings, users, and control (maintenance, force update, broadcast notifications).
 
 ## Setup
 
 ```bash
-cd admin_panel
+git clone https://github.com/sayan9191/smart_bondhu_admin_pannel.git
+cd smart_bondhu_admin_pannel
 flutter pub get
-flutter run
 ```
 
-## Backend
+Start the [backend](https://github.com/sayan9191/smart_bondhu_backend) first.
 
-Start the SmartBandhu API first:
+## Features
 
-```bash
-cd ../backend
-source .venv/bin/activate
-PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
+- Dashboard KPIs with date filters and CSV export
+- **Catalog** — categories, sub-categories, services with prices (add new items)
+- Bookings list with status updates (sends push to customer)
+- Users list with activate/deactivate
+- Control tab — maintenance mode, force update, broadcast notifications
 
-## API URL
-
-Default targets `localhost:8000`. For Android:
+## Run (development)
 
 | Device | Command |
 |--------|---------|
-| Emulator | `flutter run` (uses `10.0.2.2`) |
-| Physical device (Wi‑Fi) | `flutter run --dart-define=DEV_LAN_IP=192.168.1.83` |
-| USB + adb reverse | `adb reverse tcp:8000 tcp:8000` then `flutter run` |
+| Android emulator | `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1` |
+| Physical device (USB) | `adb reverse tcp:8000 tcp:8000` then `flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1` |
+| Physical device (Wi‑Fi) | `flutter run --dart-define=API_BASE_URL=http://YOUR_MAC_IP:8000/api/v1` |
 
-Override fully:
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://192.168.1.83:8000/api/v1
-```
-
-## Build
+## Production build
 
 ```bash
-# Android APK
-flutter build apk
-
-# iOS
-flutter build ios
-
-# macOS
-flutter run -d macos
+flutter build apk --release \
+  --dart-define=API_BASE_URL=https://api.yourdomain.com/api/v1
 ```
 
-## Repo
+## Backend deploy
 
-https://github.com/sayan9191/smart_bondhu_admin_pannel.git
+See backend [DEPLOYMENT.md](https://github.com/sayan9191/smart_bondhu_backend/blob/main/DEPLOYMENT.md) for AWS setup.
+
+## Related repos
+
+- Backend: https://github.com/sayan9191/smart_bondhu_backend
+- Customer app: https://github.com/sayan9191/smart_bondhu_frontend

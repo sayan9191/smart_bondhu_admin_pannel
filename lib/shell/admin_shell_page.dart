@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smartbandhu_admin/core/theme/app_theme.dart';
 import 'package:smartbandhu_admin/data/admin_api.dart';
 import 'package:smartbandhu_admin/features/bookings/bookings_page.dart';
+import 'package:smartbandhu_admin/features/catalog/catalog_page.dart';
 import 'package:smartbandhu_admin/features/control/control_page.dart';
 import 'package:smartbandhu_admin/features/dashboard/dashboard_page.dart';
 import 'package:smartbandhu_admin/features/users/users_page.dart';
@@ -25,8 +26,10 @@ class _AdminShellPageState extends State<AdminShellPage> {
         case 0:
           return DashboardPage(key: const PageStorageKey('dashboard'), api: widget.api);
         case 1:
-          return BookingsPage(key: const PageStorageKey('bookings'), api: widget.api);
+          return CatalogPage(key: const PageStorageKey('catalog'), api: widget.api);
         case 2:
+          return BookingsPage(key: const PageStorageKey('bookings'), api: widget.api);
+        case 3:
           return UsersPage(key: const PageStorageKey('users'), api: widget.api);
         default:
           return ControlPage(key: const PageStorageKey('control'), api: widget.api);
@@ -89,26 +92,34 @@ class _AdminShellPageState extends State<AdminShellPage> {
               _NavIcon(
                 index: 1,
                 current: _index,
-                icon: Icons.event_note_outlined,
-                activeIcon: Icons.event_note,
-                tooltip: 'Bookings',
+                icon: Icons.category_outlined,
+                activeIcon: Icons.category,
+                tooltip: 'Catalog',
                 onTap: () => setState(() => _index = 1),
               ),
               _NavIcon(
                 index: 2,
                 current: _index,
-                icon: Icons.people_outline,
-                activeIcon: Icons.people,
-                tooltip: 'Users',
+                icon: Icons.event_note_outlined,
+                activeIcon: Icons.event_note,
+                tooltip: 'Bookings',
                 onTap: () => setState(() => _index = 2),
               ),
               _NavIcon(
                 index: 3,
                 current: _index,
+                icon: Icons.people_outline,
+                activeIcon: Icons.people,
+                tooltip: 'Users',
+                onTap: () => setState(() => _index = 3),
+              ),
+              _NavIcon(
+                index: 4,
+                current: _index,
                 icon: Icons.tune_outlined,
                 activeIcon: Icons.tune,
                 tooltip: 'Control',
-                onTap: () => setState(() => _index = 3),
+                onTap: () => setState(() => _index = 4),
               ),
             ],
           ),
