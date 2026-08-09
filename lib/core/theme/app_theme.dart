@@ -6,6 +6,7 @@ class AppColors {
 
   static const primary = Color(0xFF2D6A4F);
   static const primaryDark = Color(0xFF1B4D3E);
+  static const secondary = Color(0xFF40916C);
   static const background = Color(0xFFF7F9F8);
   static const surface = Colors.white;
   static const border = Color(0xFFE4EBE8);
@@ -46,11 +47,12 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
+        height: 72,
         backgroundColor: AppColors.surface,
         indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
                 ? AppColors.primary

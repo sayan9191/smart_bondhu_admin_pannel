@@ -162,41 +162,72 @@ class _UserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        title: Text(user.fullName ?? '—', style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            Text(user.email ?? user.phone ?? '—'),
-            const SizedBox(height: 4),
-            Text(
-              '${user.role} · ${user.bookingsCount} bookings · Joined ${dateFormat.format(user.createdAt)}',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: (user.isActive ? AppColors.success : AppColors.error)
-                    .withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.fullName ?? '—',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user.email ?? user.phone ?? '—',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${user.role} · ${user.bookingsCount} bookings · Joined ${dateFormat.format(user.createdAt)}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
               ),
-              child: Text(
-                user.isActive ? 'Active' : 'Inactive',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: user.isActive ? AppColors.success : AppColors.error,
+            ),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (user.isActive ? AppColors.success : AppColors.error)
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    user.isActive ? 'Active' : 'Inactive',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: user.isActive ? AppColors.success : AppColors.error,
+                    ),
+                  ),
                 ),
-              ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: onToggle,
+                  child: Text(
+                    user.isActive ? 'Deactivate' : 'Activate',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
             ),
-            TextButton(onPressed: onToggle, child: Text(user.isActive ? 'Deactivate' : 'Activate')),
           ],
         ),
       ),

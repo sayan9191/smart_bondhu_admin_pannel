@@ -14,7 +14,25 @@ class AppConfig {
 
   static String? _resolvedApiBaseUrl;
 
+  /// Synchronous fast path — use before [runApp] when dart-defines are set.
+  static void initSync() {
+    if (_resolvedApiBaseUrl != null) return;
+
+    if (_envApiBaseUrl.isNotEmpty) {
+      _resolvedApiBaseUrl = _envApiBaseUrl;
+      return;
+    }
+
+    if (!kIsWeb && Platform.isAndroid && _devLanIp.isNotEmpty) {
+      _resolvedApiBaseUrl = 'http://$_devLanIp:8000/api/v1';
+      if (kDebugMode) debugPrint('SmartBondhu Admin API → $_resolvedApiBaseUrl');
+    }
+  }
+
   static Future<void> init() async {
+    initSync();
+    if (_resolvedApiBaseUrl != null) return;
+
     if (_envApiBaseUrl.isNotEmpty) {
       _resolvedApiBaseUrl = _envApiBaseUrl;
       return;
@@ -41,7 +59,7 @@ class AppConfig {
   static Future<String> _resolveAndroidApiBaseUrl() async {
     if (_devLanIp.isNotEmpty) {
       final url = 'http://$_devLanIp:8000/api/v1';
-      if (kDebugMode) debugPrint('SmartBondhu API → $url');
+      if (kDebugMode) debugPrint('SmartBondhu Admin API → $url');
       return url;
     }
 

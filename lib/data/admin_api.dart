@@ -1,4 +1,5 @@
 import 'package:smartbandhu_admin/core/network/api_client.dart';
+import 'package:dio/dio.dart';
 import 'package:smartbandhu_admin/data/models/admin_models.dart';
 
 class AdminApi {
@@ -6,18 +7,61 @@ class AdminApi {
 
   final ApiClient _client;
 
-  Future<DashboardStats> getDashboardStats() async {
-    final response = await _client.dio.get<Map<String, dynamic>>('/admin/dashboard/stats');
+  Future<DashboardStats> getDashboardStats({
+    String? startDate,
+    String? endDate,
+  }) async {
+    final response = await _client.dio.get<Map<String, dynamic>>(
+      '/admin/dashboard/stats',
+      queryParameters: {
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+      },
+    );
     return DashboardStats.fromJson(response.data!);
   }
 
-  Future<List<RevenuePoint>> getRevenueChart({int days = 30}) async {
+  Future<RevenueChartData> getRevenueChart({
+    int? days,
+    String? startDate,
+    String? endDate,
+  }) async {
     final response = await _client.dio.get<Map<String, dynamic>>(
       '/admin/dashboard/revenue',
-      queryParameters: {'days': days},
+      queryParameters: {
+        if (days != null) 'days': days,
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+      },
     );
-    final points = response.data!['points'] as List<dynamic>;
-    return points.map((e) => RevenuePoint.fromJson(e as Map<String, dynamic>)).toList();
+    final data = response.data!;
+    final points = (data['points'] as List<dynamic>)
+        .map((e) => RevenuePoint.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return RevenueChartData(
+      points: points,
+      periodStart: data['period_start'] != null
+          ? DateTime.parse(data['period_start'] as String)
+          : null,
+      periodEnd: data['period_end'] != null
+          ? DateTime.parse(data['period_end'] as String)
+          : null,
+    );
+  }
+
+  Future<String> exportOrdersReport({
+    String? startDate,
+    String? endDate,
+  }) async {
+    final response = await _client.dio.get<String>(
+      '/admin/dashboard/export',
+      queryParameters: {
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
+      },
+      options: Options(responseType: ResponseType.plain),
+    );
+    return response.data ?? '';
   }
 
   Future<Paginated<AdminUser>> getUsers({int page = 1, String search = ''}) async {
@@ -73,5 +117,38 @@ class AdminApi {
       },
     );
     return AdminBooking.fromJson(response.data!);
+  }
+
+  Future<AppSettings> getAppSettings() async {
+    final response = await _client.dio.get<Map<String, dynamic>>('/admin/settings');
+    return AppSettings.fromJson(response.data!);
+  }
+
+  Future<AppSettings> updateAppSettings(AppSettings settings) async {
+    final response = await _client.dio.patch<Map<String, dynamic>>(
+      '/admin/settings',
+      data: settings.toUpdateJson(),
+    );
+    return AppSettings.fromJson(response.data!);
+  }
+
+  Future<BroadcastResult> broadcastNotification({
+    required String title,
+    required String body,
+    String notificationType = 'promotion',
+    String? screen,
+    String? code,
+  }) async {
+    final response = await _client.dio.post<Map<String, dynamic>>(
+      '/admin/notifications/broadcast',
+      data: {
+        'title': title,
+        'body': body,
+        'notification_type': notificationType,
+        if (screen != null) 'screen': screen,
+        if (code != null) 'code': code,
+      },
+    );
+    return BroadcastResult.fromJson(response.data!);
   }
 }

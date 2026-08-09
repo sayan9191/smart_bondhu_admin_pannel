@@ -98,40 +98,38 @@ class _BookingsPageState extends State<BookingsPage> {
                     ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search booking #, name…',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      onSubmitted: (value) {
-                        _page = 1;
-                        _search = value.trim();
-                        _load();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  DropdownMenu<String>(
-                    initialSelection: _statusFilter,
-                    label: const Text('Status'),
-                    dropdownMenuEntries: [
-                      const DropdownMenuEntry(value: '', label: 'All'),
-                      ..._statuses.map(
-                        (s) => DropdownMenuEntry(value: s, label: formatStatus(s)),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      _page = 1;
-                      _statusFilter = value ?? '';
-                      _load();
-                    },
+              TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Search booking #, name…',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                onSubmitted: (value) {
+                  _page = 1;
+                  _search = value.trim();
+                  _load();
+                },
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: _statusFilter.isEmpty ? '' : _statusFilter,
+                decoration: const InputDecoration(
+                  labelText: 'Status filter',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: [
+                  const DropdownMenuItem(value: '', child: Text('All statuses')),
+                  ..._statuses.map(
+                    (s) => DropdownMenuItem(value: s, child: Text(formatStatus(s))),
                   ),
                 ],
+                onChanged: (value) {
+                  _page = 1;
+                  _statusFilter = value ?? '';
+                  _load();
+                },
               ),
             ],
           ),

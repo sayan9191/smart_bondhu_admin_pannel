@@ -9,6 +9,8 @@ class DashboardStats {
     required this.totalRevenue,
     required this.revenueToday,
     required this.activeVendors,
+    this.periodStart,
+    this.periodEnd,
   });
 
   final int totalUsers;
@@ -20,6 +22,8 @@ class DashboardStats {
   final double totalRevenue;
   final double revenueToday;
   final int activeVendors;
+  final DateTime? periodStart;
+  final DateTime? periodEnd;
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
     return DashboardStats(
@@ -32,8 +36,26 @@ class DashboardStats {
       totalRevenue: double.parse(json['total_revenue'].toString()),
       revenueToday: double.parse(json['revenue_today'].toString()),
       activeVendors: json['active_vendors'] as int,
+      periodStart: json['period_start'] != null
+          ? DateTime.parse(json['period_start'] as String)
+          : null,
+      periodEnd: json['period_end'] != null
+          ? DateTime.parse(json['period_end'] as String)
+          : null,
     );
   }
+}
+
+class RevenueChartData {
+  const RevenueChartData({
+    required this.points,
+    this.periodStart,
+    this.periodEnd,
+  });
+
+  final List<RevenuePoint> points;
+  final DateTime? periodStart;
+  final DateTime? periodEnd;
 }
 
 class RevenuePoint {
@@ -167,4 +189,54 @@ class AdminBooking {
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
+}
+
+class AppSettings {
+  const AppSettings({
+    required this.maintenanceMode,
+    required this.maintenanceMessage,
+    required this.forceUpdate,
+    required this.minAndroidVersion,
+    required this.minIosVersion,
+    required this.androidStoreUrl,
+    required this.iosStoreUrl,
+  });
+
+  final bool maintenanceMode;
+  final String maintenanceMessage;
+  final bool forceUpdate;
+  final String minAndroidVersion;
+  final String minIosVersion;
+  final String androidStoreUrl;
+  final String iosStoreUrl;
+
+  factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
+        maintenanceMode: json['maintenance_mode'] as bool? ?? false,
+        maintenanceMessage: json['maintenance_message'] as String? ?? '',
+        forceUpdate: json['force_update'] as bool? ?? false,
+        minAndroidVersion: json['min_android_version'] as String? ?? '1.0.0',
+        minIosVersion: json['min_ios_version'] as String? ?? '1.0.0',
+        androidStoreUrl: json['android_store_url'] as String? ?? '',
+        iosStoreUrl: json['ios_store_url'] as String? ?? '',
+      );
+
+  Map<String, dynamic> toUpdateJson() => {
+        'maintenance_mode': maintenanceMode,
+        'maintenance_message': maintenanceMessage,
+        'force_update': forceUpdate,
+        'min_android_version': minAndroidVersion,
+        'min_ios_version': minIosVersion,
+      };
+}
+
+class BroadcastResult {
+  const BroadcastResult({required this.message, required this.recipients});
+
+  final String message;
+  final int recipients;
+
+  factory BroadcastResult.fromJson(Map<String, dynamic> json) => BroadcastResult(
+        message: json['message'] as String? ?? 'Sent',
+        recipients: json['recipients'] as int? ?? 0,
+      );
 }
