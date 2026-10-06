@@ -184,6 +184,62 @@ class AdminApi {
     });
   }
 
+  Future<List<AdminBanner>> getBanners() async {
+    final response = await _client.dio.get<List<dynamic>>('/admin/banners');
+    return (response.data ?? [])
+        .map((e) => AdminBanner.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<AdminBanner> createBanner({
+    required String title,
+    required String imageUrl,
+    int sortOrder = 0,
+    bool isActive = true,
+    String action = 'services',
+    String? actionValue,
+  }) async {
+    final response = await _client.dio.post<Map<String, dynamic>>(
+      '/admin/banners',
+      data: {
+        'title': title,
+        'image_url': imageUrl,
+        'sort_order': sortOrder,
+        'is_active': isActive,
+        'action': action,
+        if (actionValue != null && actionValue.isNotEmpty) 'action_value': actionValue,
+      },
+    );
+    return AdminBanner.fromJson(response.data!);
+  }
+
+  Future<AdminBanner> updateBanner(
+    String id, {
+    String? title,
+    String? imageUrl,
+    int? sortOrder,
+    bool? isActive,
+    String? action,
+    String? actionValue,
+  }) async {
+    final response = await _client.dio.patch<Map<String, dynamic>>(
+      '/admin/banners/$id',
+      data: {
+        if (title != null) 'title': title,
+        if (imageUrl != null) 'image_url': imageUrl,
+        if (sortOrder != null) 'sort_order': sortOrder,
+        if (isActive != null) 'is_active': isActive,
+        if (action != null) 'action': action,
+        if (actionValue != null) 'action_value': actionValue,
+      },
+    );
+    return AdminBanner.fromJson(response.data!);
+  }
+
+  Future<void> deleteBanner(String id) async {
+    await _client.dio.delete('/admin/banners/$id');
+  }
+
   Future<void> createService({
     required String subCategoryId,
     required String name,

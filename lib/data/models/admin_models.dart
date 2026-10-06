@@ -294,6 +294,38 @@ class AdminCatalogSubCategory {
       );
 }
 
+class AdminBanner {
+  const AdminBanner({
+    required this.id,
+    required this.title,
+    required this.imageUrl,
+    required this.sortOrder,
+    required this.isActive,
+    required this.action,
+    this.actionValue,
+  });
+
+  final String id;
+  final String title;
+  final String imageUrl;
+  final int sortOrder;
+  final bool isActive;
+  final String action;
+  final String? actionValue;
+
+  factory AdminBanner.fromJson(Map<String, dynamic> json) {
+    return AdminBanner(
+      id: json['id'].toString(),
+      title: json['title'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
+      sortOrder: json['sort_order'] as int? ?? 0,
+      isActive: json['is_active'] as bool? ?? true,
+      action: json['action'] as String? ?? 'services',
+      actionValue: json['action_value'] as String?,
+    );
+  }
+}
+
 class AdminCatalogCategory {
   const AdminCatalogCategory({
     required this.id,
