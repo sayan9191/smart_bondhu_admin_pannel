@@ -71,13 +71,6 @@ class _UsersPageState extends State<UsersPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Users',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 12),
               TextField(
                 decoration: const InputDecoration(
                   hintText: 'Search name, email, phone…',

@@ -4,4 +4,10 @@ final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', dec
 final dateFormat = DateFormat('d MMM yyyy');
 final dateTimeFormat = DateFormat('d MMM yyyy, h:mm a');
 
-String formatStatus(String status) => status.replaceAll('_', ' ');
+String formatStatus(String status) {
+  if (status.isEmpty) return status;
+  return status.split('_').map((word) {
+    if (word.isEmpty) return word;
+    return '${word[0].toUpperCase()}${word.substring(1)}';
+  }).join(' ');
+}

@@ -329,10 +329,6 @@ class _CatalogPageState extends State<CatalogPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Catalog',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    Text(
                       'Pictures and text here are what customers see in the app.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                     ),

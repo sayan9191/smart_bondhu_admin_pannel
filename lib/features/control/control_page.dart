@@ -144,11 +144,6 @@ class _ControlPageState extends State<ControlPage> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'App control',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(
             'Maintenance, force update & push alerts',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),

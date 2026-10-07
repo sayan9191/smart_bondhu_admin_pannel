@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:smartbandhu_admin/core/app_error_mapper.dart';
 import 'package:smartbandhu_admin/core/theme/app_theme.dart';
 import 'package:smartbandhu_admin/core/utils/formatters.dart';
@@ -31,6 +32,8 @@ class _BookingsPageState extends State<BookingsPage> {
   int _page = 1;
   String _statusFilter = '';
   String _search = '';
+  DateTime? _fromDate;
+  DateTime? _toDate;
   bool _loading = true;
   String? _error;
   String? _updatingId;
@@ -51,6 +54,8 @@ class _BookingsPageState extends State<BookingsPage> {
         page: _page,
         status: _statusFilter.isEmpty ? null : _statusFilter,
         search: _search,
+        startDate: _fromDate == null ? null : DateFormat('yyyy-MM-dd').format(_fromDate!),
+        endDate: _toDate == null ? null : DateFormat('yyyy-MM-dd').format(_toDate!),
       );
       if (!mounted) return;
       setState(() {
@@ -64,6 +69,24 @@ class _BookingsPageState extends State<BookingsPage> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _pickDate({required bool isStart}) async {
+    final initial = (isStart ? _fromDate : _toDate) ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked == null) return;
+    _page = 1;
+    if (isStart) {
+      _fromDate = picked;
+    } else {
+      _toDate = picked;
+    }
+    await _load();
   }
 
   Future<void> _updateStatus(AdminBooking booking, String status) async {
@@ -91,13 +114,6 @@ class _BookingsPageState extends State<BookingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Bookings',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 12),
               TextField(
                 decoration: const InputDecoration(
                   hintText: 'Search booking #, name…',
@@ -112,24 +128,70 @@ class _BookingsPageState extends State<BookingsPage> {
                 },
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _statusFilter.isEmpty ? '' : _statusFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Status filter',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: [
-                  const DropdownMenuItem(value: '', child: Text('All statuses')),
-                  ..._statuses.map(
-                    (s) => DropdownMenuItem(value: s, child: Text(formatStatus(s))),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickDate(isStart: true),
+                      icon: const Icon(Icons.calendar_today_outlined, size: 16),
+                      label: Text(_fromDate == null ? 'From date' : dateFormat.format(_fromDate!)),
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickDate(isStart: false),
+                      icon: const Icon(Icons.event_outlined, size: 16),
+                      label: Text(_toDate == null ? 'To date' : dateFormat.format(_toDate!)),
+                    ),
+                  ),
+                  if (_fromDate != null || _toDate != null)
+                    IconButton(
+                      tooltip: 'Clear dates',
+                      onPressed: () {
+                        _page = 1;
+                        _fromDate = null;
+                        _toDate = null;
+                        _load();
+                      },
+                      icon: const Icon(Icons.close),
+                    ),
                 ],
-                onChanged: (value) {
-                  _page = 1;
-                  _statusFilter = value ?? '';
-                  _load();
-                },
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: const Text('All'),
+                        selected: _statusFilter.isEmpty,
+                        onSelected: (_) {
+                          _page = 1;
+                          _statusFilter = '';
+                          _load();
+                        },
+                      ),
+                    ),
+                    ..._statuses.map(
+                      (status) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(formatStatus(status)),
+                          selected: _statusFilter == status,
+                          onSelected: (_) {
+                            _page = 1;
+                            _statusFilter = status;
+                            _load();
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -224,7 +286,26 @@ class _BookingTile extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                   ),
                 ),
-                StatusBadge(status: booking.status),
+                updating
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value != booking.status) onStatusChanged(value);
+                        },
+                        itemBuilder: (context) => _statuses
+                            .map(
+                              (status) => PopupMenuItem(
+                                value: status,
+                                child: Text(formatStatus(status)),
+                              ),
+                            )
+                            .toList(),
+                        child: StatusBadge(status: booking.status),
+                      ),
               ],
             ),
             const SizedBox(height: 8),
@@ -246,24 +327,6 @@ class _BookingTile extends StatelessWidget {
                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              key: ValueKey('${booking.id}-${booking.status}'),
-              initialValue: booking.status,
-              decoration: const InputDecoration(
-                labelText: 'Update status',
-                isDense: true,
-                border: OutlineInputBorder(),
-              ),
-              items: _statuses
-                  .map((s) => DropdownMenuItem(value: s, child: Text(formatStatus(s))))
-                  .toList(),
-              onChanged: updating ? null : (value) {
-                if (value != null && value != booking.status) {
-                  onStatusChanged(value);
-                }
-              },
-            ),
           ],
         ),
       ),

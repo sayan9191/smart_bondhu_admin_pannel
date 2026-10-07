@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbandhu_admin/core/app_error_mapper.dart';
 import 'package:smartbandhu_admin/core/theme/app_theme.dart';
+import 'package:smartbandhu_admin/core/utils/formatters.dart';
 import 'package:smartbandhu_admin/data/admin_api.dart';
 import 'package:smartbandhu_admin/data/models/admin_models.dart';
 import 'package:smartbandhu_admin/widgets/maintenance_view.dart';
+import 'package:smartbandhu_admin/widgets/status_badge.dart';
 
 class EnquiriesPage extends StatefulWidget {
   const EnquiriesPage({super.key, required this.api});
@@ -114,11 +116,6 @@ class _EnquiriesPageState extends State<EnquiriesPage> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Website enquiries',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(
             'Requests people send from the Smart Bondhu website',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
@@ -169,17 +166,19 @@ class _EnquiriesPageState extends State<EnquiriesPage> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _statuses.contains(item.status) ? item.status : 'new',
-                              decoration: const InputDecoration(labelText: 'Status'),
-                              items: _statuses
-                                  .map((status) => DropdownMenuItem(value: status, child: Text(status)))
-                                  .toList(),
-                              onChanged: (value) {
-                                if (value != null && value != item.status) _setStatus(item, value);
-                              },
-                            ),
+                          PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value != item.status) _setStatus(item, value);
+                            },
+                            itemBuilder: (context) => _statuses
+                                .map(
+                                  (status) => PopupMenuItem(
+                                    value: status,
+                                    child: Text(formatStatus(status)),
+                                  ),
+                                )
+                                .toList(),
+                            child: StatusBadge(status: item.status),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton(

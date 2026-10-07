@@ -122,12 +122,6 @@ class _BannersPageState extends State<BannersPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'If this is a missing table, run supabase/migrations/004_home_banners.sql, then redeploy the API.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                        ),
                         const SizedBox(height: 12),
                         FilledButton(onPressed: _load, child: const Text('Retry')),
                       ],
@@ -139,8 +133,6 @@ class _BannersPageState extends State<BannersPage> {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                     children: [
-                      Text('Home banners', style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 4),
                       const Text(
                         'These images show in the carousel on the customer home screen. Paste an image URL, or upload one to storage and paste the returned link.',
                         style: TextStyle(color: AppColors.textSecondary, height: 1.35),

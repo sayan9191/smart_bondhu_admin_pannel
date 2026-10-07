@@ -91,6 +91,8 @@ class AdminApi {
     int page = 1,
     String? status,
     String search = '',
+    String? startDate,
+    String? endDate,
   }) async {
     final response = await _client.dio.get<Map<String, dynamic>>(
       '/admin/bookings',
@@ -99,6 +101,8 @@ class AdminApi {
         'page_size': 20,
         if (status != null && status.isNotEmpty) 'status': status,
         if (search.isNotEmpty) 'search': search,
+        if (startDate != null) 'start_date': startDate,
+        if (endDate != null) 'end_date': endDate,
       },
     );
     return Paginated.fromJson(response.data!, AdminBooking.fromJson);

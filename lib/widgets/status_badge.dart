@@ -19,7 +19,14 @@ class StatusBadge extends StatelessWidget {
       case 'in_progress':
         return AppColors.info;
       case 'pending':
+      case 'new':
         return AppColors.warning;
+      case 'in_review':
+      case 'contacted':
+      case 'quoted':
+        return AppColors.info;
+      case 'closed':
+        return AppColors.success;
       default:
         return AppColors.textSecondary;
     }
