@@ -63,6 +63,14 @@ class _BannersPageState extends State<BannersPage> {
     if (created == true) _load();
   }
 
+  Future<void> _edit(AdminBanner banner) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => _BannerFormDialog(api: widget.api, existing: banner),
+    );
+    if (saved == true) _load();
+  }
+
   Future<void> _toggle(AdminBanner banner, bool active) async {
     try {
       await widget.api.updateBanner(banner.id, isActive: active);
@@ -181,6 +189,10 @@ class _BannersPageState extends State<BannersPage> {
                                     ),
                                     const Spacer(),
                                     IconButton(
+                                      onPressed: () => _edit(banner),
+                                      icon: const Icon(Icons.edit_outlined),
+                                    ),
+                                    IconButton(
                                       onPressed: () => _delete(banner),
                                       icon: const Icon(Icons.delete_outline, color: AppColors.error),
                                     ),
@@ -198,20 +210,31 @@ class _BannersPageState extends State<BannersPage> {
 }
 
 class _BannerFormDialog extends StatefulWidget {
-  const _BannerFormDialog({required this.api});
+  const _BannerFormDialog({required this.api, this.existing});
 
   final AdminApi api;
+  final AdminBanner? existing;
 
   @override
   State<_BannerFormDialog> createState() => _BannerFormDialogState();
 }
 
 class _BannerFormDialogState extends State<_BannerFormDialog> {
-  final _title = TextEditingController();
-  final _imageUrl = TextEditingController();
-  final _sort = TextEditingController(text: '0');
-  String _action = 'services';
+  late final TextEditingController _title;
+  late final TextEditingController _imageUrl;
+  late final TextEditingController _sort;
+  late String _action;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _title = TextEditingController(text: existing?.title ?? '');
+    _imageUrl = TextEditingController(text: existing?.imageUrl ?? '');
+    _sort = TextEditingController(text: '${existing?.sortOrder ?? 0}');
+    _action = existing?.action ?? 'services';
+  }
 
   @override
   void dispose() {
@@ -230,12 +253,26 @@ class _BannerFormDialogState extends State<_BannerFormDialog> {
     }
     setState(() => _saving = true);
     try {
-      await widget.api.createBanner(
-        title: _title.text.trim(),
-        imageUrl: _imageUrl.text.trim(),
-        sortOrder: int.tryParse(_sort.text.trim()) ?? 0,
-        action: _action,
-      );
+      final title = _title.text.trim();
+      final imageUrl = _imageUrl.text.trim();
+      final sortOrder = int.tryParse(_sort.text.trim()) ?? 0;
+      final existing = widget.existing;
+      if (existing == null) {
+        await widget.api.createBanner(
+          title: title,
+          imageUrl: imageUrl,
+          sortOrder: sortOrder,
+          action: _action,
+        );
+      } else {
+        await widget.api.updateBanner(
+          existing.id,
+          title: title,
+          imageUrl: imageUrl,
+          sortOrder: sortOrder,
+          action: _action,
+        );
+      }
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -248,7 +285,7 @@ class _BannerFormDialogState extends State<_BannerFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add banner'),
+      title: Text(widget.existing == null ? 'Add banner' : 'Edit banner'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

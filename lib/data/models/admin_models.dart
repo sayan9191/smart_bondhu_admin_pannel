@@ -249,6 +249,8 @@ class AdminCatalogService {
     required this.basePrice,
     required this.durationMinutes,
     required this.isActive,
+    this.description,
+    this.imageUrl,
   });
 
   final String id;
@@ -257,6 +259,8 @@ class AdminCatalogService {
   final double basePrice;
   final int durationMinutes;
   final bool isActive;
+  final String? description;
+  final String? imageUrl;
 
   factory AdminCatalogService.fromJson(Map<String, dynamic> json) => AdminCatalogService(
         id: json['id'] as String,
@@ -265,6 +269,8 @@ class AdminCatalogService {
         basePrice: double.parse(json['base_price'].toString()),
         durationMinutes: json['duration_minutes'] as int,
         isActive: json['is_active'] as bool? ?? true,
+        description: json['description'] as String?,
+        imageUrl: json['image_url'] as String?,
       );
 }
 
@@ -275,6 +281,9 @@ class AdminCatalogSubCategory {
     required this.name,
     required this.slug,
     required this.services,
+    this.description,
+    this.iconUrl,
+    this.isActive = true,
   });
 
   final String id;
@@ -282,12 +291,18 @@ class AdminCatalogSubCategory {
   final String name;
   final String slug;
   final List<AdminCatalogService> services;
+  final String? description;
+  final String? iconUrl;
+  final bool isActive;
 
   factory AdminCatalogSubCategory.fromJson(Map<String, dynamic> json) => AdminCatalogSubCategory(
         id: json['id'] as String,
         categoryId: json['category_id'] as String,
         name: json['name'] as String,
         slug: json['slug'] as String,
+        description: json['description'] as String?,
+        iconUrl: json['icon_url'] as String?,
+        isActive: json['is_active'] as bool? ?? true,
         services: (json['services'] as List<dynamic>? ?? [])
             .map((e) => AdminCatalogService.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -333,6 +348,9 @@ class AdminCatalogCategory {
     required this.slug,
     required this.isActive,
     required this.subCategories,
+    this.description,
+    this.imageUrl,
+    this.iconUrl,
   });
 
   final String id;
@@ -340,6 +358,9 @@ class AdminCatalogCategory {
   final String slug;
   final bool isActive;
   final List<AdminCatalogSubCategory> subCategories;
+  final String? description;
+  final String? imageUrl;
+  final String? iconUrl;
 
   factory AdminCatalogCategory.fromJson(Map<String, dynamic> json) {
     final category = json['category'] as Map<String, dynamic>;
@@ -351,7 +372,48 @@ class AdminCatalogCategory {
       name: category['name'] as String,
       slug: category['slug'] as String,
       isActive: category['is_active'] as bool? ?? true,
+      description: category['description'] as String?,
+      imageUrl: category['image_url'] as String?,
+      iconUrl: category['icon_url'] as String?,
       subCategories: subs,
+    );
+  }
+}
+
+class WebsiteEnquiry {
+  const WebsiteEnquiry({
+    required this.id,
+    required this.enquiryCode,
+    required this.name,
+    required this.phone,
+    required this.service,
+    required this.requirement,
+    required this.status,
+    required this.notes,
+    this.createdAt,
+  });
+
+  final String id;
+  final String enquiryCode;
+  final String name;
+  final String phone;
+  final String service;
+  final String requirement;
+  final String status;
+  final String notes;
+  final DateTime? createdAt;
+
+  factory WebsiteEnquiry.fromJson(Map<String, dynamic> json) {
+    return WebsiteEnquiry(
+      id: json['id'].toString(),
+      enquiryCode: json['enquiry_code'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      service: json['service'] as String? ?? '',
+      requirement: json['requirement'] as String? ?? '',
+      status: json['status'] as String? ?? 'new',
+      notes: json['notes'] as String? ?? '',
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
     );
   }
 }

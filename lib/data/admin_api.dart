@@ -240,6 +240,79 @@ class AdminApi {
     await _client.dio.delete('/admin/banners/$id');
   }
 
+  Future<void> updateCategory(
+    String id, {
+    String? name,
+    String? description,
+    String? imageUrl,
+    String? iconUrl,
+    bool? isActive,
+  }) async {
+    await _client.dio.patch('/admin/catalog/categories/$id', data: {
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (iconUrl != null) 'icon_url': iconUrl,
+      if (isActive != null) 'is_active': isActive,
+    });
+  }
+
+  Future<void> updateSubCategory(
+    String id, {
+    String? name,
+    String? description,
+    String? imageUrl,
+    bool? isActive,
+  }) async {
+    await _client.dio.patch('/admin/catalog/sub-categories/$id', data: {
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (imageUrl != null) 'icon_url': imageUrl,
+      if (isActive != null) 'is_active': isActive,
+    });
+  }
+
+  Future<void> updateService(
+    String id, {
+    String? name,
+    String? description,
+    String? imageUrl,
+    double? basePrice,
+    int? durationMinutes,
+    bool? isActive,
+  }) async {
+    await _client.dio.patch('/admin/catalog/services/$id', data: {
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (basePrice != null) 'base_price': basePrice,
+      if (durationMinutes != null) 'duration_minutes': durationMinutes,
+      if (isActive != null) 'is_active': isActive,
+    });
+  }
+
+  Future<List<WebsiteEnquiry>> getEnquiries() async {
+    final response = await _client.dio.get<List<dynamic>>('/admin/enquiries');
+    return (response.data ?? [])
+        .map((e) => WebsiteEnquiry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<WebsiteEnquiry> updateEnquiry(
+    String id, {
+    String? status,
+    String? notes,
+  }) async {
+    final response = await _client.dio.patch<Map<String, dynamic>>(
+      '/admin/enquiries/$id',
+      data: {
+        if (status != null) 'status': status,
+        if (notes != null) 'notes': notes,
+      },
+    );
+    return WebsiteEnquiry.fromJson(response.data!);
+  }
+
   Future<void> createService({
     required String subCategoryId,
     required String name,
