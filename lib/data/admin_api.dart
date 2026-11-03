@@ -160,6 +160,20 @@ class AdminApi {
         .toList();
   }
 
+  /// Uploads an image file (picked from the gallery) to the backend, which
+  /// compresses it and stores it, then returns the public image URL to save
+  /// in a category or service's `image_url`.
+  Future<String> uploadCatalogImage(String filePath) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    final response = await _client.dio.post<Map<String, dynamic>>(
+      '/admin/catalog/upload',
+      data: form,
+    );
+    return response.data!['image_url'] as String;
+  }
+
   Future<void> createCategory({
     required String name,
     required String slug,
