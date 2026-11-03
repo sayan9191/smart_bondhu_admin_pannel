@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smartbandhu_admin/core/app_error_mapper.dart';
 import 'package:smartbandhu_admin/core/theme/app_theme.dart';
 import 'package:smartbandhu_admin/core/utils/formatters.dart';
@@ -54,39 +55,60 @@ class _CatalogPageState extends State<CatalogPage> {
     final nameController = TextEditingController();
     final slugController = TextEditingController();
     final imageController = TextEditingController();
+    bool uploading = false;
+    String? uploadError;
 
     final saved = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add category'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Category name'),
-                onChanged: (v) {
-                  if (slugController.text.isEmpty) slugController.text = _slugify(v);
-                },
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: slugController,
-                decoration: const InputDecoration(labelText: 'Slug'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: imageController,
-                decoration: const InputDecoration(labelText: 'Image URL (optional)'),
-              ),
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: const Text('Add category'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Category name'),
+                  onChanged: (v) {
+                    if (slugController.text.isEmpty) slugController.text = _slugify(v);
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: slugController,
+                  decoration: const InputDecoration(labelText: 'Slug'),
+                ),
+                const SizedBox(height: 14),
+                _ImagePickerField(
+                  api: widget.api,
+                  imageController: imageController,
+                  uploading: uploading,
+                  uploadError: uploadError,
+                  onStart: () => setLocal(() {
+                    uploading = true;
+                    uploadError = null;
+                  }),
+                  onDone: (url) => setLocal(() {
+                    imageController.text = url;
+                    uploading = false;
+                  }),
+                  onError: (msg) => setLocal(() {
+                    uploading = false;
+                    uploadError = msg;
+                  }),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: uploading ? null : () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
-        ],
       ),
     );
 
@@ -156,49 +178,76 @@ class _CatalogPageState extends State<CatalogPage> {
     final priceController = TextEditingController(text: '299');
     final durationController = TextEditingController(text: '60');
     final descController = TextEditingController();
+    final imageController = TextEditingController();
+    bool uploading = false;
+    String? uploadError;
 
     final saved = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add service · ${sub.name}'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Service name'),
-                onChanged: (v) {
-                  if (slugController.text.isEmpty) slugController.text = _slugify(v);
-                },
-              ),
-              const SizedBox(height: 10),
-              TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
-              const SizedBox(height: 10),
-              TextField(
-                controller: priceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Price (INR)'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: durationController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Duration (minutes)'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(labelText: 'Description (optional)'),
-                maxLines: 2,
-              ),
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: Text('Add service · ${sub.name}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Service name'),
+                  onChanged: (v) {
+                    if (slugController.text.isEmpty) slugController.text = _slugify(v);
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Price (INR)'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: durationController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Duration (minutes)'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: descController,
+                  decoration: const InputDecoration(labelText: 'Description (optional)'),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 14),
+                _ImagePickerField(
+                  api: widget.api,
+                  imageController: imageController,
+                  uploading: uploading,
+                  uploadError: uploadError,
+                  onStart: () => setLocal(() {
+                    uploading = true;
+                    uploadError = null;
+                  }),
+                  onDone: (url) => setLocal(() {
+                    imageController.text = url;
+                    uploading = false;
+                  }),
+                  onError: (msg) => setLocal(() {
+                    uploading = false;
+                    uploadError = msg;
+                  }),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: uploading ? null : () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
-        ],
       ),
     );
 
@@ -211,6 +260,7 @@ class _CatalogPageState extends State<CatalogPage> {
         basePrice: double.parse(priceController.text.trim()),
         durationMinutes: int.parse(durationController.text.trim()),
         description: descController.text.trim(),
+        imageUrl: imageController.text.trim(),
       );
       await _load();
     } catch (e) {
@@ -351,6 +401,98 @@ class _CatalogPageState extends State<CatalogPage> {
             }),
         ],
       ),
+    );
+  }
+}
+
+/// Image field used in the Add category / Add service dialogs: pick a photo
+/// from the gallery, upload it (the backend compresses it), and keep the
+/// resulting public URL. A URL can still be pasted manually as a fallback.
+class _ImagePickerField extends StatelessWidget {
+  const _ImagePickerField({
+    required this.api,
+    required this.imageController,
+    required this.uploading,
+    required this.uploadError,
+    required this.onStart,
+    required this.onDone,
+    required this.onError,
+  });
+
+  final AdminApi api;
+  final TextEditingController imageController;
+  final bool uploading;
+  final String? uploadError;
+  final VoidCallback onStart;
+  final void Function(String url) onDone;
+  final void Function(String message) onError;
+
+  Future<void> _pick() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 2000,
+    );
+    if (picked == null) return;
+    onStart();
+    try {
+      final url = await api.uploadCatalogImage(picked.path);
+      onDone(url);
+    } catch (e) {
+      onError(AppErrorMapper.message(e));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageController.text.isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Text('Image', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        const SizedBox(height: 8),
+        if (hasImage)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                imageController.text,
+                height: 120,
+                width: 120,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(
+                  height: 120,
+                  width: 120,
+                  child: Icon(Icons.broken_image_outlined),
+                ),
+              ),
+            ),
+          ),
+        OutlinedButton.icon(
+          onPressed: uploading ? null : _pick,
+          icon: uploading
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.photo_library_outlined, size: 18),
+          label: Text(uploading ? 'Uploading…' : (hasImage ? 'Change image' : 'Choose from gallery')),
+        ),
+        if (uploadError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(uploadError!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+          ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: imageController,
+          decoration: const InputDecoration(
+            labelText: 'Image URL (auto-filled, or paste one)',
+            isDense: true,
+          ),
+        ),
+      ],
     );
   }
 }
