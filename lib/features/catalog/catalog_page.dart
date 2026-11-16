@@ -51,6 +51,31 @@ class _CatalogPageState extends State<CatalogPage> {
   String _slugify(String value) =>
       value.toLowerCase().trim().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '');
 
+  void _toast(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<bool> _confirmDelete(String what, {String? extra}) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Delete $what?'),
+            content: Text(extra ?? 'This cannot be undone.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  // ---------------- Category ----------------
   Future<void> _addCategory() async {
     final nameController = TextEditingController();
     final slugController = TextEditingController();
@@ -75,38 +100,15 @@ class _CatalogPageState extends State<CatalogPage> {
                   },
                 ),
                 const SizedBox(height: 10),
-                TextField(
-                  controller: slugController,
-                  decoration: const InputDecoration(labelText: 'Slug'),
-                ),
+                TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
                 const SizedBox(height: 14),
-                _ImagePickerField(
-                  api: widget.api,
-                  imageController: imageController,
-                  uploading: uploading,
-                  uploadError: uploadError,
-                  onStart: () => setLocal(() {
-                    uploading = true;
-                    uploadError = null;
-                  }),
-                  onDone: (url) => setLocal(() {
-                    imageController.text = url;
-                    uploading = false;
-                  }),
-                  onError: (msg) => setLocal(() {
-                    uploading = false;
-                    uploadError = msg;
-                  }),
-                ),
+                _imageField(imageController, uploading, uploadError, setLocal, (u) => uploading = u, (e) => uploadError = e),
               ],
             ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: uploading ? null : () => Navigator.pop(context, true),
-              child: const Text('Save'),
-            ),
+            FilledButton(onPressed: uploading ? null : () => Navigator.pop(context, true), child: const Text('Save')),
           ],
         ),
       ),
@@ -121,11 +123,73 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       await _load();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMapper.message(e))));
+      _toast(AppErrorMapper.message(e));
     }
   }
 
+  Future<void> _editCategory(AdminCatalogCategory category) async {
+    final nameController = TextEditingController(text: category.name);
+    final imageController = TextEditingController();
+    bool uploading = false;
+    String? uploadError;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: const Text('Edit category'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Category name')),
+                const SizedBox(height: 14),
+                _imageField(imageController, uploading, uploadError, setLocal, (u) => uploading = u, (e) => uploadError = e),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Upload a new photo to replace the current image.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(onPressed: uploading ? null : () => Navigator.pop(context, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+    try {
+      await widget.api.updateCategory(
+        category.id,
+        name: nameController.text.trim(),
+        imageUrl: imageController.text.trim(),
+      );
+      await _load();
+    } catch (e) {
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
+  Future<void> _deleteCategory(AdminCatalogCategory category) async {
+    final ok = await _confirmDelete('category "${category.name}"',
+        extra: 'This also deletes its sub-categories and services. This cannot be undone.');
+    if (!ok || !mounted) return;
+    try {
+      await widget.api.deleteCategory(category.id);
+      await _load();
+    } catch (e) {
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
+  // ---------------- Sub-category ----------------
   Future<void> _addSubCategory(AdminCatalogCategory category) async {
     final nameController = TextEditingController();
     final slugController = TextEditingController();
@@ -145,10 +209,7 @@ class _CatalogPageState extends State<CatalogPage> {
               },
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: slugController,
-              decoration: const InputDecoration(labelText: 'Slug'),
-            ),
+            TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
           ],
         ),
         actions: [
@@ -167,11 +228,45 @@ class _CatalogPageState extends State<CatalogPage> {
       );
       await _load();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMapper.message(e))));
+      _toast(AppErrorMapper.message(e));
     }
   }
 
+  Future<void> _editSubCategory(AdminCatalogSubCategory sub) async {
+    final nameController = TextEditingController(text: sub.name);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit sub-category'),
+        content: TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Sub-category name')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (saved != true || !mounted) return;
+    try {
+      await widget.api.updateSubCategory(sub.id, name: nameController.text.trim());
+      await _load();
+    } catch (e) {
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
+  Future<void> _deleteSubCategory(AdminCatalogSubCategory sub) async {
+    final ok = await _confirmDelete('sub-category "${sub.name}"',
+        extra: 'This also deletes its services. This cannot be undone.');
+    if (!ok || !mounted) return;
+    try {
+      await widget.api.deleteSubCategory(sub.id);
+      await _load();
+    } catch (e) {
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
+  // ---------------- Service ----------------
   Future<void> _addService(AdminCatalogCategory category, AdminCatalogSubCategory sub) async {
     final nameController = TextEditingController();
     final slugController = TextEditingController();
@@ -201,51 +296,19 @@ class _CatalogPageState extends State<CatalogPage> {
                 const SizedBox(height: 10),
                 TextField(controller: slugController, decoration: const InputDecoration(labelText: 'Slug')),
                 const SizedBox(height: 10),
-                TextField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Price (INR)'),
-                ),
+                TextField(controller: priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Price (INR)')),
                 const SizedBox(height: 10),
-                TextField(
-                  controller: durationController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Duration (minutes)'),
-                ),
+                TextField(controller: durationController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Duration (minutes)')),
                 const SizedBox(height: 10),
-                TextField(
-                  controller: descController,
-                  decoration: const InputDecoration(labelText: 'Description (optional)'),
-                  maxLines: 2,
-                ),
+                TextField(controller: descController, decoration: const InputDecoration(labelText: 'Description (optional)'), maxLines: 2),
                 const SizedBox(height: 14),
-                _ImagePickerField(
-                  api: widget.api,
-                  imageController: imageController,
-                  uploading: uploading,
-                  uploadError: uploadError,
-                  onStart: () => setLocal(() {
-                    uploading = true;
-                    uploadError = null;
-                  }),
-                  onDone: (url) => setLocal(() {
-                    imageController.text = url;
-                    uploading = false;
-                  }),
-                  onError: (msg) => setLocal(() {
-                    uploading = false;
-                    uploadError = msg;
-                  }),
-                ),
+                _imageField(imageController, uploading, uploadError, setLocal, (u) => uploading = u, (e) => uploadError = e),
               ],
             ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: uploading ? null : () => Navigator.pop(context, true),
-              child: const Text('Save'),
-            ),
+            FilledButton(onPressed: uploading ? null : () => Navigator.pop(context, true), child: const Text('Save')),
           ],
         ),
       ),
@@ -257,16 +320,113 @@ class _CatalogPageState extends State<CatalogPage> {
         subCategoryId: sub.id,
         name: nameController.text.trim(),
         slug: slugController.text.trim(),
-        basePrice: double.parse(priceController.text.trim()),
-        durationMinutes: int.parse(durationController.text.trim()),
+        basePrice: double.tryParse(priceController.text.trim()) ?? 0,
+        durationMinutes: int.tryParse(durationController.text.trim()) ?? 60,
         description: descController.text.trim(),
         imageUrl: imageController.text.trim(),
       );
       await _load();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppErrorMapper.message(e))));
+      _toast(AppErrorMapper.message(e));
     }
+  }
+
+  Future<void> _editService(AdminCatalogService service) async {
+    final nameController = TextEditingController(text: service.name);
+    final priceController = TextEditingController(text: service.basePrice.toStringAsFixed(0));
+    final durationController = TextEditingController(text: service.durationMinutes.toString());
+    final imageController = TextEditingController();
+    bool uploading = false;
+    String? uploadError;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: const Text('Edit service'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Service name')),
+                const SizedBox(height: 10),
+                TextField(controller: priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Price (INR)')),
+                const SizedBox(height: 10),
+                TextField(controller: durationController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Duration (minutes)')),
+                const SizedBox(height: 14),
+                _imageField(imageController, uploading, uploadError, setLocal, (u) => uploading = u, (e) => uploadError = e),
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Upload a new photo to replace the current image.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(onPressed: uploading ? null : () => Navigator.pop(context, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+    try {
+      await widget.api.updateService(
+        service.id,
+        name: nameController.text.trim(),
+        basePrice: double.tryParse(priceController.text.trim()),
+        durationMinutes: int.tryParse(durationController.text.trim()),
+        imageUrl: imageController.text.trim(),
+      );
+      await _load();
+    } catch (e) {
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
+  Future<void> _deleteService(AdminCatalogService service) async {
+    final ok = await _confirmDelete('service "${service.name}"');
+    if (!ok || !mounted) return;
+    try {
+      await widget.api.deleteService(service.id);
+      await _load();
+    } catch (e) {
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
+  // Shared image field widget for the dialogs.
+  Widget _imageField(
+    TextEditingController controller,
+    bool uploading,
+    String? uploadError,
+    void Function(void Function()) setLocal,
+    void Function(bool) setUploading,
+    void Function(String?) setError,
+  ) {
+    return _ImagePickerField(
+      api: widget.api,
+      imageController: controller,
+      uploading: uploading,
+      uploadError: uploadError,
+      onStart: () => setLocal(() {
+        setUploading(true);
+        setError(null);
+      }),
+      onDone: (url) => setLocal(() {
+        controller.text = url;
+        setUploading(false);
+      }),
+      onError: (msg) => setLocal(() {
+        setUploading(false);
+        setError(msg);
+      }),
+    );
   }
 
   @override
@@ -290,22 +450,13 @@ class _CatalogPageState extends State<CatalogPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Catalog',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      '${_categories.length} categories',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                    ),
+                    Text('Catalog', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('${_categories.length} categories',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
                   ],
                 ),
               ),
-              FilledButton.icon(
-                onPressed: _addCategory,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add category'),
-              ),
+              FilledButton.icon(onPressed: _addCategory, icon: const Icon(Icons.add, size: 18), label: const Text('Add category')),
             ],
           ),
           const SizedBox(height: 16),
@@ -318,8 +469,7 @@ class _CatalogPageState extends State<CatalogPage> {
             )
           else
             ..._categories.map((category) {
-              final serviceCount =
-                  category.subCategories.fold<int>(0, (sum, sub) => sum + sub.services.length);
+              final serviceCount = category.subCategories.fold<int>(0, (sum, sub) => sum + sub.services.length);
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ExpansionTile(
@@ -330,26 +480,25 @@ class _CatalogPageState extends State<CatalogPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: category.isActive
-                      ? null
-                      : const Chip(label: Text('Inactive', style: TextStyle(fontSize: 11))),
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _addSubCategory(category),
-                          icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                          label: const Text('Add sub-category'),
-                        ),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _addSubCategory(category),
+                              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                              label: const Text('Add sub-category'),
+                            ),
+                          ),
+                          IconButton(tooltip: 'Edit category', icon: const Icon(Icons.edit_outlined), onPressed: () => _editCategory(category)),
+                          IconButton(tooltip: 'Delete category', icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _deleteCategory(category)),
+                        ],
                       ),
                     ),
                     if (category.subCategories.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Text('No sub-categories yet.'),
-                      )
+                      const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('No sub-categories yet.'))
                     else
                       ...category.subCategories.map((sub) {
                         return Padding(
@@ -366,17 +515,26 @@ class _CatalogPageState extends State<CatalogPage> {
                                 ListTile(
                                   title: Text(sub.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                                   subtitle: Text('${sub.services.length} services'),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.add_circle_outline),
-                                    tooltip: 'Add service',
-                                    onPressed: () => _addService(category, sub),
+                                  trailing: PopupMenuButton<String>(
+                                    tooltip: 'Options',
+                                    onSelected: (v) {
+                                      if (v == 'add') {
+                                        _addService(category, sub);
+                                      } else if (v == 'edit') {
+                                        _editSubCategory(sub);
+                                      } else if (v == 'delete') {
+                                        _deleteSubCategory(sub);
+                                      }
+                                    },
+                                    itemBuilder: (_) => const [
+                                      PopupMenuItem(value: 'add', child: Text('Add service')),
+                                      PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                    ],
                                   ),
                                 ),
                                 if (sub.services.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                                    child: Text('No services in this group.'),
-                                  )
+                                  const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: Text('No services in this group.'))
                                 else
                                   ...sub.services.map(
                                     (service) => ListTile(
@@ -384,9 +542,25 @@ class _CatalogPageState extends State<CatalogPage> {
                                       leading: const Icon(Icons.home_repair_service_outlined, size: 20),
                                       title: Text(service.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                                       subtitle: Text('${service.durationMinutes} min · ${service.slug}'),
-                                      trailing: Text(
-                                        currencyFormat.format(service.basePrice),
-                                        style: const TextStyle(fontWeight: FontWeight.w700),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(currencyFormat.format(service.basePrice), style: const TextStyle(fontWeight: FontWeight.w700)),
+                                          PopupMenuButton<String>(
+                                            tooltip: 'Options',
+                                            onSelected: (v) {
+                                              if (v == 'edit') {
+                                                _editService(service);
+                                              } else if (v == 'delete') {
+                                                _deleteService(service);
+                                              }
+                                            },
+                                            itemBuilder: (_) => const [
+                                              PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                              PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -405,9 +579,8 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 }
 
-/// Image field used in the Add category / Add service dialogs: pick a photo
-/// from the gallery, upload it (the backend compresses it), and keep the
-/// resulting public URL. A URL can still be pasted manually as a fallback.
+/// Image field used in the dialogs: pick a photo from the gallery, upload it
+/// (the backend compresses it), and keep the resulting public URL.
 class _ImagePickerField extends StatelessWidget {
   const _ImagePickerField({
     required this.api,
@@ -428,11 +601,7 @@ class _ImagePickerField extends StatelessWidget {
   final void Function(String message) onError;
 
   Future<void> _pick() async {
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 2000,
-    );
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 2000);
     if (picked == null) return;
     onStart();
     try {
@@ -449,10 +618,7 @@ class _ImagePickerField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Text('Image', style: TextStyle(fontWeight: FontWeight.w600)),
-        ),
+        const Align(alignment: Alignment.centerLeft, child: Text('Image', style: TextStyle(fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
         if (hasImage)
           Padding(
@@ -464,11 +630,7 @@ class _ImagePickerField extends StatelessWidget {
                 height: 120,
                 width: 120,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox(
-                  height: 120,
-                  width: 120,
-                  child: Icon(Icons.broken_image_outlined),
-                ),
+                errorBuilder: (_, __, ___) => const SizedBox(height: 120, width: 120, child: Icon(Icons.broken_image_outlined)),
               ),
             ),
           ),
@@ -487,10 +649,7 @@ class _ImagePickerField extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: imageController,
-          decoration: const InputDecoration(
-            labelText: 'Image URL (auto-filled, or paste one)',
-            isDense: true,
-          ),
+          decoration: const InputDecoration(labelText: 'Image URL (auto-filled, or paste one)', isDense: true),
         ),
       ],
     );
