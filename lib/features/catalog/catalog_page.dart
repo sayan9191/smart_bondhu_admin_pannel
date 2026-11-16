@@ -48,6 +48,19 @@ class _CatalogPageState extends State<CatalogPage> {
     }
   }
 
+  // Refresh the data WITHOUT blanking the screen to a spinner (used after
+  // add / edit / delete and on pull-to-refresh).
+  Future<void> _refresh() async {
+    try {
+      final categories = await widget.api.getCatalog();
+      if (!mounted) return;
+      setState(() => _categories = categories);
+    } catch (e) {
+      if (!mounted) return;
+      _toast(AppErrorMapper.message(e));
+    }
+  }
+
   String _slugify(String value) =>
       value.toLowerCase().trim().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '');
 
@@ -121,7 +134,7 @@ class _CatalogPageState extends State<CatalogPage> {
         slug: slugController.text.trim(),
         imageUrl: imageController.text.trim(),
       );
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -145,10 +158,10 @@ class _CatalogPageState extends State<CatalogPage> {
                 TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Category name')),
                 const SizedBox(height: 14),
                 _imageField(imageController, uploading, uploadError, setLocal, (u) => uploading = u, (e) => uploadError = e),
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 8),
                     child: Text('Upload a new photo to replace the current image.',
                         style: TextStyle(fontSize: 12, color: Colors.grey)),
                   ),
@@ -171,7 +184,7 @@ class _CatalogPageState extends State<CatalogPage> {
         name: nameController.text.trim(),
         imageUrl: imageController.text.trim(),
       );
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -183,7 +196,7 @@ class _CatalogPageState extends State<CatalogPage> {
     if (!ok || !mounted) return;
     try {
       await widget.api.deleteCategory(category.id);
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -226,7 +239,7 @@ class _CatalogPageState extends State<CatalogPage> {
         name: nameController.text.trim(),
         slug: slugController.text.trim(),
       );
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -248,7 +261,7 @@ class _CatalogPageState extends State<CatalogPage> {
     if (saved != true || !mounted) return;
     try {
       await widget.api.updateSubCategory(sub.id, name: nameController.text.trim());
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -260,7 +273,7 @@ class _CatalogPageState extends State<CatalogPage> {
     if (!ok || !mounted) return;
     try {
       await widget.api.deleteSubCategory(sub.id);
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -325,7 +338,7 @@ class _CatalogPageState extends State<CatalogPage> {
         description: descController.text.trim(),
         imageUrl: imageController.text.trim(),
       );
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -355,14 +368,6 @@ class _CatalogPageState extends State<CatalogPage> {
                 TextField(controller: durationController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Duration (minutes)')),
                 const SizedBox(height: 14),
                 _imageField(imageController, uploading, uploadError, setLocal, (u) => uploading = u, (e) => uploadError = e),
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Upload a new photo to replace the current image.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ),
-                ),
               ],
             ),
           ),
@@ -383,7 +388,7 @@ class _CatalogPageState extends State<CatalogPage> {
         durationMinutes: int.tryParse(durationController.text.trim()),
         imageUrl: imageController.text.trim(),
       );
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
@@ -394,13 +399,12 @@ class _CatalogPageState extends State<CatalogPage> {
     if (!ok || !mounted) return;
     try {
       await widget.api.deleteService(service.id);
-      await _load();
+      await _refresh();
     } catch (e) {
       _toast(AppErrorMapper.message(e));
     }
   }
 
-  // Shared image field widget for the dialogs.
   Widget _imageField(
     TextEditingController controller,
     bool uploading,
@@ -439,7 +443,7 @@ class _CatalogPageState extends State<CatalogPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: _refresh,
       color: AppColors.primary,
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -468,111 +472,120 @@ class _CatalogPageState extends State<CatalogPage> {
               ),
             )
           else
-            ..._categories.map((category) {
-              final serviceCount = category.subCategories.fold<int>(0, (sum, sub) => sum + sub.services.length);
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ExpansionTile(
-                  tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: Text(
-                    '${category.subCategories.length} sub-categories · $serviceCount services',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _addSubCategory(category),
-                              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                              label: const Text('Add sub-category'),
-                            ),
-                          ),
-                          IconButton(tooltip: 'Edit category', icon: const Icon(Icons.edit_outlined), onPressed: () => _editCategory(category)),
-                          IconButton(tooltip: 'Delete category', icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _deleteCategory(category)),
-                        ],
-                      ),
-                    ),
-                    if (category.subCategories.isEmpty)
-                      const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('No sub-categories yet.'))
-                    else
-                      ...category.subCategories.map((sub) {
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.background,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ListTile(
-                                  title: Text(sub.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  subtitle: Text('${sub.services.length} services'),
-                                  trailing: PopupMenuButton<String>(
-                                    tooltip: 'Options',
-                                    onSelected: (v) {
-                                      if (v == 'add') {
-                                        _addService(category, sub);
-                                      } else if (v == 'edit') {
-                                        _editSubCategory(sub);
-                                      } else if (v == 'delete') {
-                                        _deleteSubCategory(sub);
-                                      }
-                                    },
-                                    itemBuilder: (_) => const [
-                                      PopupMenuItem(value: 'add', child: Text('Add service')),
-                                      PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                      PopupMenuItem(value: 'delete', child: Text('Delete')),
-                                    ],
-                                  ),
-                                ),
-                                if (sub.services.isEmpty)
-                                  const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: Text('No services in this group.'))
-                                else
-                                  ...sub.services.map(
-                                    (service) => ListTile(
-                                      dense: true,
-                                      leading: const Icon(Icons.home_repair_service_outlined, size: 20),
-                                      title: Text(service.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      subtitle: Text('${service.durationMinutes} min · ${service.slug}'),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(currencyFormat.format(service.basePrice), style: const TextStyle(fontWeight: FontWeight.w700)),
-                                          PopupMenuButton<String>(
-                                            tooltip: 'Options',
-                                            onSelected: (v) {
-                                              if (v == 'edit') {
-                                                _editService(service);
-                                              } else if (v == 'delete') {
-                                                _deleteService(service);
-                                              }
-                                            },
-                                            itemBuilder: (_) => const [
-                                              PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                              PopupMenuItem(value: 'delete', child: Text('Delete')),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                  ],
-                ),
-              );
-            }),
+            for (final category in _categories) _categoryCard(category),
+        ],
+      ),
+    );
+  }
+
+  Widget _categoryCard(AdminCatalogCategory category) {
+    final serviceCount = category.subCategories.fold<int>(0, (sum, sub) => sum + sub.services.length);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(
+          '${category.subCategories.length} sub-categories · $serviceCount services',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: PopupMenuButton<String>(
+          tooltip: 'Category options',
+          onSelected: (v) {
+            if (v == 'edit') {
+              _editCategory(category);
+            } else if (v == 'delete') {
+              _deleteCategory(category);
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 'edit', child: Text('Edit category')),
+            PopupMenuItem(value: 'delete', child: Text('Delete category')),
+          ],
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () => _addSubCategory(category),
+                icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                label: const Text('Add sub-category'),
+              ),
+            ),
+          ),
+          if (category.subCategories.isEmpty)
+            const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('No sub-categories yet.'))
+          else
+            for (final sub in category.subCategories) _subCategoryTile(category, sub),
+        ],
+      ),
+    );
+  }
+
+  Widget _subCategoryTile(AdminCatalogCategory category, AdminCatalogSubCategory sub) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              title: Text(sub.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('${sub.services.length} services'),
+              trailing: PopupMenuButton<String>(
+                tooltip: 'Sub-category options',
+                onSelected: (v) {
+                  if (v == 'add') {
+                    _addService(category, sub);
+                  } else if (v == 'edit') {
+                    _editSubCategory(sub);
+                  } else if (v == 'delete') {
+                    _deleteSubCategory(sub);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'add', child: Text('Add service')),
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              ),
+            ),
+            if (sub.services.isEmpty)
+              const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: Text('No services in this group.'))
+            else
+              for (final service in sub.services) _serviceTile(service),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _serviceTile(AdminCatalogService service) {
+    return ListTile(
+      dense: true,
+      leading: const Icon(Icons.home_repair_service_outlined, size: 20),
+      title: Text(service.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text('${service.durationMinutes} min · ${currencyFormat.format(service.basePrice)}'),
+      trailing: PopupMenuButton<String>(
+        tooltip: 'Service options',
+        onSelected: (v) {
+          if (v == 'edit') {
+            _editService(service);
+          } else if (v == 'delete') {
+            _deleteService(service);
+          }
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Text('Edit')),
+          PopupMenuItem(value: 'delete', child: Text('Delete')),
         ],
       ),
     );
