@@ -217,4 +217,46 @@ class AdminApi {
       if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
     });
   }
+
+  Future<void> updateCategory(String id, {String? name, String? imageUrl}) async {
+    await _client.dio.patch('/admin/catalog/categories/$id', data: {
+      if (name != null && name.isNotEmpty) 'name': name,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+    });
+  }
+
+  Future<void> updateSubCategory(String id, {String? name}) async {
+    await _client.dio.patch('/admin/catalog/sub-categories/$id', data: {
+      if (name != null && name.isNotEmpty) 'name': name,
+    });
+  }
+
+  Future<void> updateService(
+    String id, {
+    String? name,
+    double? basePrice,
+    int? durationMinutes,
+    String? description,
+    String? imageUrl,
+  }) async {
+    await _client.dio.patch('/admin/catalog/services/$id', data: {
+      if (name != null && name.isNotEmpty) 'name': name,
+      if (basePrice != null) 'base_price': basePrice,
+      if (durationMinutes != null) 'duration_minutes': durationMinutes,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+    });
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await _client.dio.delete('/admin/catalog/categories/$id');
+  }
+
+  Future<void> deleteSubCategory(String id) async {
+    await _client.dio.delete('/admin/catalog/sub-categories/$id');
+  }
+
+  Future<void> deleteService(String id) async {
+    await _client.dio.delete('/admin/catalog/services/$id');
+  }
 }
