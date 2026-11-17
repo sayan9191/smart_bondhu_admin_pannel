@@ -535,6 +535,7 @@ class _CatalogPageState extends State<CatalogPage> {
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ListTile(
