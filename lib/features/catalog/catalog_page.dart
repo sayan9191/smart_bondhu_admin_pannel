@@ -21,6 +21,10 @@ class _CatalogPageState extends State<CatalogPage> {
   bool _loading = true;
   String? _error;
 
+  // Ids of categories the user has expanded. Collapsed categories render only
+  // their header row (no hidden sub-tree), which keeps layout simple and safe.
+  final Set<String> _expanded = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -442,37 +446,47 @@ class _CatalogPageState extends State<CatalogPage> {
       return MaintenanceView(message: _error, onRetry: _load);
     }
 
+    final itemCount = _categories.isEmpty ? 2 : _categories.length + 1;
+
     return RefreshIndicator(
       onRefresh: _refresh,
       color: AppColors.primary,
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Catalog', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    Text('${_categories.length} categories',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
-                  ],
-                ),
-              ),
-              FilledButton.icon(onPressed: _addCategory, icon: const Icon(Icons.add, size: 18), label: const Text('Add category')),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_categories.isEmpty)
-            const Card(
+        itemCount: itemCount,
+        itemBuilder: (context, index) {
+          if (index == 0) return _header(context);
+          if (_categories.isEmpty) {
+            return const Card(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('No categories yet. Tap “Add category” to create one.'),
+                child: Text('No categories yet. Tap "Add category" to create one.'),
               ),
-            )
-          else
-            for (final category in _categories) _categoryCard(category),
+            );
+          }
+          return _categoryCard(_categories[index - 1]);
+        },
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Catalog', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text('${_categories.length} categories',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          FilledButton.icon(onPressed: _addCategory, icon: const Icon(Icons.add, size: 18), label: const Text('Add category')),
         ],
       ),
     );
@@ -480,48 +494,81 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Widget _categoryCard(AdminCatalogCategory category) {
     final serviceCount = category.subCategories.fold<int>(0, (sum, sub) => sum + sub.services.length);
+    final isOpen = _expanded.contains(category.id);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(
-          '${category.subCategories.length} sub-categories · $serviceCount services',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: PopupMenuButton<String>(
-          tooltip: 'Category options',
-          onSelected: (v) {
-            if (v == 'edit') {
-              _editCategory(category);
-            } else if (v == 'delete') {
-              _deleteCategory(category);
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'edit', child: Text('Edit category')),
-            PopupMenuItem(value: 'delete', child: Text('Delete category')),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () => _addSubCategory(category),
-                icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                label: const Text('Add sub-category'),
-              ),
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            onTap: () => setState(() {
+              if (isOpen) {
+                _expanded.remove(category.id);
+              } else {
+                _expanded.add(category.id);
+              }
+            }),
+            title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: Text(
+              '${category.subCategories.length} sub-categories · $serviceCount services',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(isOpen ? Icons.expand_less : Icons.expand_more, color: AppColors.textSecondary),
+                PopupMenuButton<String>(
+                  tooltip: 'Category options',
+                  onSelected: (v) {
+                    if (v == 'edit') {
+                      _editCategory(category);
+                    } else if (v == 'delete') {
+                      _deleteCategory(category);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('Edit category')),
+                    PopupMenuItem(value: 'delete', child: Text('Delete category')),
+                  ],
+                ),
+              ],
             ),
           ),
-          if (category.subCategories.isEmpty)
-            const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 16), child: Text('No sub-categories yet.'))
-          else
-            for (final sub in category.subCategories) _subCategoryTile(category, sub),
+          if (isOpen) _categoryBody(category),
         ],
       ),
+    );
+  }
+
+  Widget _categoryBody(AdminCatalogCategory category) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => _addSubCategory(category),
+              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+              label: const Text('Add sub-category'),
+            ),
+          ),
+        ),
+        if (category.subCategories.isEmpty)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Text('No sub-categories yet.'),
+          )
+        else
+          for (final sub in category.subCategories) _subCategoryTile(category, sub),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -560,9 +607,13 @@ class _CatalogPageState extends State<CatalogPage> {
               ),
             ),
             if (sub.services.isEmpty)
-              const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 12), child: Text('No services in this group.'))
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Text('No services in this group.'),
+              )
             else
               for (final service in sub.services) _serviceTile(service),
+            const SizedBox(height: 4),
           ],
         ),
       ),
@@ -631,6 +682,7 @@ class _ImagePickerField extends StatelessWidget {
     final hasImage = imageController.text.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         const Align(alignment: Alignment.centerLeft, child: Text('Image', style: TextStyle(fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
@@ -653,7 +705,7 @@ class _ImagePickerField extends StatelessWidget {
           icon: uploading
               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.photo_library_outlined, size: 18),
-          label: Text(uploading ? 'Uploading…' : (hasImage ? 'Change image' : 'Choose from gallery')),
+          label: Text(uploading ? 'Uploading...' : (hasImage ? 'Change image' : 'Choose from gallery')),
         ),
         if (uploadError != null)
           Padding(
