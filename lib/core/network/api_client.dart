@@ -27,8 +27,8 @@ class ApiClient {
 /// The backend runs on AWS Lambda. After it has been idle the first request
 /// triggers a cold start that can be slow or briefly return a 5xx while the
 /// function boots. Retrying once makes that invisible to the user instead of
-/// showing a "temporarily unavailable" message. Only GET requests are retried,
-/// so no create / update / delete is ever sent twice.
+/// showing a "temporarily unavailable" message. Only idempotent methods
+/// (GET, PATCH, DELETE) are retried, so a create (POST) is never sent twice.
 class _ColdStartRetryInterceptor extends Interceptor {
   _ColdStartRetryInterceptor(this._dio);
 
@@ -53,7 +53,10 @@ class _ColdStartRetryInterceptor extends Interceptor {
   }
 
   bool _shouldRetry(DioException err) {
-    if (err.requestOptions.method.toUpperCase() != 'GET') return false;
+    const retriable = {'GET', 'PATCH', 'DELETE'};
+    if (!retriable.contains(err.requestOptions.method.toUpperCase())) {
+      return false;
+    }
     switch (err.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
