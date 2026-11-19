@@ -59,9 +59,9 @@ class _CatalogPageState extends State<CatalogPage> {
       final categories = await widget.api.getCatalog();
       if (!mounted) return;
       setState(() => _categories = categories);
-    } catch (e) {
-      if (!mounted) return;
-      _toast(AppErrorMapper.message(e));
+    } catch (_) {
+      // Ignore a transient refresh failure (e.g. a serverless cold start):
+      // the data already on screen stays and the next action refreshes it.
     }
   }
 
