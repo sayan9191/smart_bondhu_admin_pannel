@@ -3,6 +3,7 @@ import 'package:smartbandhu_admin/core/theme/app_theme.dart';
 import 'package:smartbandhu_admin/data/admin_api.dart';
 import 'package:smartbandhu_admin/features/bookings/bookings_page.dart';
 import 'package:smartbandhu_admin/features/catalog/catalog_page.dart';
+import 'package:smartbandhu_admin/features/coupons/coupons_page.dart';
 import 'package:smartbandhu_admin/features/control/control_page.dart';
 import 'package:smartbandhu_admin/features/dashboard/dashboard_page.dart';
 import 'package:smartbandhu_admin/features/users/users_page.dart';
@@ -31,8 +32,10 @@ class _AdminShellPageState extends State<AdminShellPage> {
           return BookingsPage(key: const PageStorageKey('bookings'), api: widget.api);
         case 3:
           return UsersPage(key: const PageStorageKey('users'), api: widget.api);
-        default:
+        case 4:
           return ControlPage(key: const PageStorageKey('control'), api: widget.api);
+        default:
+          return CouponsPage(key: const PageStorageKey('coupons'), api: widget.api);
       }
     });
   }
@@ -120,6 +123,14 @@ class _AdminShellPageState extends State<AdminShellPage> {
                 activeIcon: Icons.tune,
                 tooltip: 'Control',
                 onTap: () => setState(() => _index = 4),
+              ),
+              _NavIcon(
+                index: 5,
+                current: _index,
+                icon: Icons.local_offer_outlined,
+                activeIcon: Icons.local_offer,
+                tooltip: 'Coupons',
+                onTap: () => setState(() => _index = 5),
               ),
             ],
           ),
