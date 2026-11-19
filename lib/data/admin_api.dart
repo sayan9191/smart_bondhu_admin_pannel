@@ -259,4 +259,57 @@ class AdminApi {
   Future<void> deleteService(String id) async {
     await _client.dio.delete('/admin/catalog/services/$id');
   }
+
+  // ---------------- Coupons ----------------
+  Future<List<Map<String, dynamic>>> getCoupons() async {
+    final response = await _client.dio.get<List<dynamic>>('/admin/coupons');
+    return (response.data ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
+  }
+
+  Future<void> createCoupon({
+    required String code,
+    required String couponType,
+    required double value,
+    double? minOrderAmount,
+    double? maxDiscount,
+    String? description,
+    bool isActive = true,
+  }) async {
+    await _client.dio.post('/admin/coupons', data: {
+      'code': code,
+      'coupon_type': couponType,
+      'value': value,
+      if (minOrderAmount != null) 'min_order_amount': minOrderAmount,
+      if (maxDiscount != null) 'max_discount': maxDiscount,
+      if (description != null && description.isNotEmpty) 'description': description,
+      'is_active': isActive,
+    });
+  }
+
+  Future<void> updateCoupon(
+    String id, {
+    String? code,
+    String? couponType,
+    double? value,
+    double? minOrderAmount,
+    double? maxDiscount,
+    String? description,
+    bool? isActive,
+  }) async {
+    await _client.dio.patch('/admin/coupons/$id', data: {
+      if (code != null && code.isNotEmpty) 'code': code,
+      if (couponType != null) 'coupon_type': couponType,
+      if (value != null) 'value': value,
+      if (minOrderAmount != null) 'min_order_amount': minOrderAmount,
+      if (maxDiscount != null) 'max_discount': maxDiscount,
+      if (description != null) 'description': description,
+      if (isActive != null) 'is_active': isActive,
+    });
+  }
+
+  Future<void> deleteCoupon(String id) async {
+    await _client.dio.delete('/admin/coupons/$id');
+  }
 }
