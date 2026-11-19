@@ -11,6 +11,31 @@ import 'package:smartbandhu_admin/widgets/admin_splash_view.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Safety net: if any screen throws while building/laying out, show a
+  // readable message instead of a blank grey box (release ErrorWidget).
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: const Color(0xFFF7F7F7),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 40),
+              SizedBox(height: 12),
+              Text(
+                'Something went wrong showing this section.\nPull down to refresh, or go back and try again.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
   AppConfig.initSync();
   runApp(const _BootstrapApp());
 }

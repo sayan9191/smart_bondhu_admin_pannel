@@ -160,6 +160,20 @@ class AdminApi {
         .toList();
   }
 
+  /// Uploads an image file (picked from the gallery) to the backend, which
+  /// compresses it and stores it, then returns the public image URL to save
+  /// in a category or service's `image_url`.
+  Future<String> uploadCatalogImage(String filePath) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    final response = await _client.dio.post<Map<String, dynamic>>(
+      '/admin/catalog/upload',
+      data: form,
+    );
+    return response.data!['image_url'] as String;
+  }
+
   Future<void> createCategory({
     required String name,
     required String slug,
@@ -202,5 +216,47 @@ class AdminApi {
       if (description != null && description.isNotEmpty) 'description': description,
       if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
     });
+  }
+
+  Future<void> updateCategory(String id, {String? name, String? imageUrl}) async {
+    await _client.dio.patch('/admin/catalog/categories/$id', data: {
+      if (name != null && name.isNotEmpty) 'name': name,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+    });
+  }
+
+  Future<void> updateSubCategory(String id, {String? name}) async {
+    await _client.dio.patch('/admin/catalog/sub-categories/$id', data: {
+      if (name != null && name.isNotEmpty) 'name': name,
+    });
+  }
+
+  Future<void> updateService(
+    String id, {
+    String? name,
+    double? basePrice,
+    int? durationMinutes,
+    String? description,
+    String? imageUrl,
+  }) async {
+    await _client.dio.patch('/admin/catalog/services/$id', data: {
+      if (name != null && name.isNotEmpty) 'name': name,
+      if (basePrice != null) 'base_price': basePrice,
+      if (durationMinutes != null) 'duration_minutes': durationMinutes,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+    });
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await _client.dio.delete('/admin/catalog/categories/$id');
+  }
+
+  Future<void> deleteSubCategory(String id) async {
+    await _client.dio.delete('/admin/catalog/sub-categories/$id');
+  }
+
+  Future<void> deleteService(String id) async {
+    await _client.dio.delete('/admin/catalog/services/$id');
   }
 }
